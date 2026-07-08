@@ -57,11 +57,11 @@
                     <version>${jib-maven-plugin.version}</version>
                     <configuration>
                         <from>
-                            <image>amazoncorretto:21</image>
+                            <image>eclipse-temurin:21-jre</image>
                             <platforms>
                                 <platform>
                                     <os>linux</os>
-                                    <architecture>x64</architecture>
+                                    <architecture>amd64</architecture>
                                 </platform>
                             </platforms>
                         </from>
