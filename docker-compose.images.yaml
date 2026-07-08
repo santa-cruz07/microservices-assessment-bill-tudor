@@ -45,7 +45,7 @@ services:
 
   order-service:
     container_name: ma-order-service
-    image: ${IMAGE_NAMESPACE:-r11dev/bill-tudor-microservices-assessment}/order-module:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REPOSITORY:-r11dev/bill-tudor-microservices-assessment}:${ORDER_IMAGE_TAG:-order-module-latest}
     pull_policy: always
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/orders
@@ -70,7 +70,7 @@ services:
 
   notification-service:
     container_name: ma-notification-service
-    image: ${IMAGE_NAMESPACE:-r11dev/bill-tudor-microservices-assessment}/notification-module:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REPOSITORY:-r11dev/bill-tudor-microservices-assessment}:${NOTIFICATION_IMAGE_TAG:-notification-module-latest}
     pull_policy: always
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/notifications
