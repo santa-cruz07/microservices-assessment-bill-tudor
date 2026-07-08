@@ -1,0 +1,49 @@
+services:
+  postgres:
+    container_name: ma-postgres
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    volumes:
+      - ./resources/docker/postgres/scripts:/docker-entrypoint-initdb.d/
+    ports:
+      - "5449:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks:
+      - ma-network
+
+  rabbitmq:
+    container_name: ma-rabbitmq
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - ma-network
+
+  aspire:
+    container_name: ma-aspire
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+    ports:
+      - "18888:18888" # Web UI
+      - "18889:18889" # OTLP gRPC
+      - "18890:18890" # OTLP HTTP
+    networks:
+      - ma-network
+
+networks:
+  ma-network:
+    name: ma-network
+    driver: bridge

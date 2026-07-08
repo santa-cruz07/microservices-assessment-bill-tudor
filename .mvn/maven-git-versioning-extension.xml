@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gitVersioning>
+    <updatePom>false</updatePom>
+
+    <refs>
+        <!-- Tag builds (for ci-cd -->
+        <ref type="tag">
+            <pattern>.*</pattern> <!-- Match any tag -->
+            <describeTagPattern><![CDATA[(?<name>.*)]]></describeTagPattern>
+            <version>${describe.tag.name}</version>
+        </ref>
+
+        <!-- Match only the 'main' branch -->
+        <ref type="branch">
+            <pattern>main</pattern>
+            <describeTagPattern><![CDATA[(?<name>.*)]]></describeTagPattern>
+            <version>${describe.tag.name}</version>
+        </ref>
+
+        <!-- Match everything except 'main' -->
+        <ref type="branch">
+            <pattern>(?!main$).*</pattern> <!-- Negative lookahead: anything except 'main' -->
+            <describeTagPattern><![CDATA[(?<name>.*)]]></describeTagPattern>
+            <version>${describe.tag.name}-SNAPSHOT</version>
+        </ref>
+    </refs>
+</gitVersioning>
