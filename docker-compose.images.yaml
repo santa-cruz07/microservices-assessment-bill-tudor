@@ -1,0 +1,99 @@
+services:
+  postgres:
+    container_name: ma-postgres
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    volumes:
+      - ./resources/docker/postgres/scripts:/docker-entrypoint-initdb.d/
+    ports:
+      - "5449:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks:
+      - ma-network
+
+  rabbitmq:
+    container_name: ma-rabbitmq
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - ma-network
+
+  aspire:
+    container_name: ma-aspire
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+    ports:
+      - "18888:18888"
+      - "18889:18889"
+      - "18890:18890"
+    networks:
+      - ma-network
+
+  order-service:
+    container_name: ma-order-service
+    image: ${IMAGE_NAMESPACE:-r11dev/bill-tudor-microservices-assessment}/order-module:${IMAGE_TAG:-latest}
+    pull_policy: always
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/orders
+      DB_USERNAME: app
+      DB_PASSWORD: app
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      OTLP_TRACING_ENDPOINT: http://aspire:18890/v1/traces
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      aspire:
+        condition: service_started
+    networks:
+      - ma-network
+
+  notification-service:
+    container_name: ma-notification-service
+    image: ${IMAGE_NAMESPACE:-r11dev/bill-tudor-microservices-assessment}/notification-module:${IMAGE_TAG:-latest}
+    pull_policy: always
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/notifications
+      DB_USERNAME: app
+      DB_PASSWORD: app
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      OTLP_TRACING_ENDPOINT: http://aspire:18890/v1/traces
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      aspire:
+        condition: service_started
+    networks:
+      - ma-network
+
+networks:
+  ma-network:
+    name: ma-network
+    driver: bridge

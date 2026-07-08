@@ -1,10 +1,12 @@
-@host=http://localhost:8080
-@apiKey=company-2-key
+@orderHost=http://localhost:8080
+@tenantOneKey=company-1-key
+@tenantTwoKey=company-2-key
+@orderId=replace-with-order-id
 
-### Create Order
-POST {{host}}/api/orders
+### Create order for tenant 1
+POST {{orderHost}}/api/orders
 Content-Type: application/json
-X-Api-Key: {{apiKey}}
+X-Api-Key: {{tenantOneKey}}
 
 {
   "customerEmail": "bill@example.com",
@@ -12,6 +14,59 @@ X-Api-Key: {{apiKey}}
   "quantity": 2
 }
 
-### Get Orders
-GET {{host}}/api/orders
-X-Api-Key: {{apiKey}}
+### List tenant 1 orders
+GET {{orderHost}}/api/orders
+X-Api-Key: {{tenantOneKey}}
+
+### List tenant 2 orders
+GET {{orderHost}}/api/orders
+X-Api-Key: {{tenantTwoKey}}
+
+### Get order by id
+GET {{orderHost}}/api/orders/{{orderId}}
+X-Api-Key: {{tenantOneKey}}
+
+### Move order to PROCESSING
+POST {{orderHost}}/api/orders/{{orderId}}/status
+Content-Type: application/json
+X-Api-Key: {{tenantOneKey}}
+
+{
+  "status": "PROCESSING"
+}
+
+### Move order to SHIPPED
+POST {{orderHost}}/api/orders/{{orderId}}/status
+Content-Type: application/json
+X-Api-Key: {{tenantOneKey}}
+
+{
+  "status": "SHIPPED"
+}
+
+### Move order to DELIVERED
+POST {{orderHost}}/api/orders/{{orderId}}/status
+Content-Type: application/json
+X-Api-Key: {{tenantOneKey}}
+
+{
+  "status": "DELIVERED"
+}
+
+### Cancel order
+POST {{orderHost}}/api/orders/{{orderId}}/cancel
+X-Api-Key: {{tenantOneKey}}
+
+### Invalid create payload
+POST {{orderHost}}/api/orders
+Content-Type: application/json
+X-Api-Key: {{tenantOneKey}}
+
+{
+  "customerEmail": "not-an-email",
+  "itemDescription": "",
+  "quantity": 0
+}
+
+### Missing API key
+GET {{orderHost}}/api/orders

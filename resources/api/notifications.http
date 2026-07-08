@@ -1,0 +1,14 @@
+@notificationHost=http://localhost:8081
+@tenantOneKey=company-1-key
+@tenantTwoKey=company-2-key
+
+### List tenant 1 notifications
+GET {{notificationHost}}/api/notifications
+X-Api-Key: {{tenantOneKey}}
+
+### List tenant 2 notifications
+GET {{notificationHost}}/api/notifications
+X-Api-Key: {{tenantTwoKey}}
+
+### Missing API key
+GET {{notificationHost}}/api/notifications

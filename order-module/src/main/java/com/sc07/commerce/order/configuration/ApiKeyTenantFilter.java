@@ -1,6 +1,6 @@
 package com.sc07.commerce.order.configuration;
 
-import io.opentelemetry.api.trace.Span;
+import io.micrometer.tracing.Tracer;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +28,12 @@ public class ApiKeyTenantFilter extends OncePerRequestFilter {
                     UUID.fromString("22222222-2222-2222-2222-222222222222")
             )
     );
+
+    private final Tracer tracer;
+
+    public ApiKeyTenantFilter(Tracer tracer) {
+        this.tracer = tracer;
+    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -57,7 +63,9 @@ public class ApiKeyTenantFilter extends OncePerRequestFilter {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        Span.current().setAttribute("tenant.id", principal.tenantId().toString());
+        if (tracer.currentSpan() != null) {
+            tracer.currentSpan().tag("tenant.id", principal.tenantId().toString());
+        }
 
         try {
             chain.doFilter(request, response);
