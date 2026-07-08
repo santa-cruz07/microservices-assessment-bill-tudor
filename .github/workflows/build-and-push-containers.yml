@@ -36,12 +36,15 @@ jobs:
       - name: Extract tag name
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
 
+      - name: Compile Module
+        run: mvn -B -pl ${{ matrix.module }} -am compile -DskipTests
+
       - name: Build and Push Docker Image
         run: >
-          mvn -B -pl ${{ matrix.module }} -am
-          com.google.cloud.tools:jib-maven-plugin:3.5.1:build
+          mvn -B -pl ${{ matrix.module }}
+          jib:build
           -DskipTests
-          -Djib.to.image=r11dev/bill-tudor-microservices-assessment/${{ matrix.module }}
-          -Djib.to.tags=latest,${{ env.TAG_NAME }}
+          -Djib.to.image=r11dev/bill-tudor-microservices-assessment
+          -Djib.to.tags=${{ matrix.module }}-latest,${{ matrix.module }}-${{ env.TAG_NAME }}
           -Djib.to.auth.username=${{ secrets.DOCKERHUB_USERNAME }}
           -Djib.to.auth.password=${{ secrets.DOCKERHUB_PASSWORD }}
