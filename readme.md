@@ -8,6 +8,12 @@ Small Spring Boot commerce system with separate order and notification services.
 - `order-module`: order API, order persistence, and outbox publisher.
 - `notification-module`: RabbitMQ consumer, notification persistence, and notification API.
 
+### Important
+```
+Notification handling can be found via REST calls in ./resources/api/ or the container stdout
+```
+
+
 Order changes are written to an outbox table in the same transaction as the order update. The outbox publisher sends those events to RabbitMQ, and the notification service consumes them.
 
 ## Local Dependencies
@@ -26,6 +32,12 @@ Static tenants are hard-coded behind API keys. There is no tenant CRUD or tenant
 
 ## Run
 
+Run published images:
+
+```powershell
+docker compose -f docker-compose.images.yaml up -d
+```
+
 Start infrastructure:
 
 ```powershell
@@ -39,11 +51,7 @@ mvn -pl order-module spring-boot:run
 mvn -pl notification-module spring-boot:run
 ```
 
-Run published images:
 
-```powershell
-docker compose -f docker-compose.images.yaml up -d
-```
 
 Service URLs:
 
