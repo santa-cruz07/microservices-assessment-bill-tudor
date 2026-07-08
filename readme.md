@@ -91,6 +91,7 @@ Override with `OTLP_TRACING_ENDPOINT`.
 ## Tradeoffs
 
 - Tenant IDs and API keys are static.
+- Row level tenant scoping in the database, not just the spring application
 - Services own separate databases.
 - Notification sending is mocked.
 - Outbox publishing starts a new Micrometer span rather than continuing a propagated `traceparent`.
