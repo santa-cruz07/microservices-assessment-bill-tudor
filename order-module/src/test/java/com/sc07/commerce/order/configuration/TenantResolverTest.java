@@ -22,23 +22,23 @@ class TenantResolverTest {
     }
 
     @Test
-    void resolvesTenantIdFromAuthenticatedPrincipal() {
+    void resolvesTenantIdFromSecurityContext() {
         UUID tenantId = UUID.randomUUID();
-        SecurityContextHolder.getContext().setAuthentication(
-                new ApiKeyAuthToken(new TenantPrincipal(tenantId)));
+        SecurityContextHolder.getContext()
+                .setAuthentication(new ApiKeyAuthToken(new TenantPrincipal(tenantId)));
 
         assertThat(tenantResolver.resolveCurrentTenantIdentifier()).isEqualTo(tenantId);
     }
 
     @Test
-    void throwsWhenTenantPrincipalIsMissing() {
+    void failsWhenTenantPrincipalIsMissing() {
         assertThatThrownBy(tenantResolver::resolveCurrentTenantIdentifier)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("No tenant principal found");
     }
 
     @Test
-    void registersItselfAsHibernateTenantResolver() {
+    void registersWithHibernate() {
         Map<String, Object> properties = new HashMap<>();
 
         tenantResolver.customize(properties);

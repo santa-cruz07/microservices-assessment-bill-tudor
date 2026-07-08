@@ -1,0 +1,14 @@
+@orderHost=http://localhost:8080
+@notificationHost=http://localhost:8081
+
+### Order service health
+GET {{orderHost}}/actuator/health
+
+### Order service metrics
+GET {{orderHost}}/actuator/metrics
+
+### Notification service health
+GET {{notificationHost}}/actuator/health
+
+### Notification service metrics
+GET {{notificationHost}}/actuator/metrics

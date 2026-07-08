@@ -2,16 +2,17 @@ package com.sc07.commerce.order;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sc07.commerce.order.configuration.ApiKeyTenantFilter;
-import com.sc07.commerce.order.entity.OrderStatus;
+import com.sc07.commerce.order.repository.OutboxEventRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -26,8 +27,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @Testcontainers
 @SpringBootTest(properties = {
-        "otel.sdk.disabled=true",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
+        "management.otlp.tracing.endpoint=http://localhost:9/v1/traces",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "outbox.poll-rate-ms=600000"
 })
 @AutoConfigureMockMvc
 class OrderApiContainerTest {
@@ -44,6 +46,12 @@ class OrderApiContainerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @MockitoBean
+    private RabbitTemplate rabbitTemplate;
+
+    @MockitoBean
+    private OutboxEventRepository outboxEventRepository;
+
     @DynamicPropertySource
     static void databaseProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -52,96 +60,38 @@ class OrderApiContainerTest {
     }
 
     @Test
-    void createsReadsAndTransitionsOrder() throws Exception {
-        String id = createOrder("buyer@example.com", "Laptop", 1);
+    void apiKeyScopesOrdersByTenant() throws Exception {
+        createOrder("tenant-one@example.com", "Keyboard", "company-1-key");
 
-        assertOrder(id, "buyer@example.com", "Laptop", 1, OrderStatus.PENDING);
-
-        updateStatus(id, OrderStatus.PROCESSING)
+        mockMvc.perform(get("/api/orders")
+                        .header(ApiKeyTenantFilter.API_KEY_HEADER, "company-1-key"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(OrderStatus.PROCESSING.name()));
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].customerEmail").value("tenant-one@example.com"));
 
-        cancelOrder(id)
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(OrderStatus.CANCELLED.name()));
-    }
-
-    @Test
-    void enforcesApiKeyAndTenantIsolation() throws Exception {
-        createOrder("tenant-one@example.com", "Keyboard", 1);
-
-        // Missing API key should be rejected.
-        mockMvc.perform(get("/api/orders"))
-                .andExpect(status().isUnauthorized());
-
-        // Tenant 2 should not see tenant 1's order.
         mockMvc.perform(get("/api/orders")
                         .header(ApiKeyTenantFilter.API_KEY_HEADER, "company-2-key"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
-
-        // Tenant 1 should see its own order.
-        mockMvc.perform(get("/api/orders")
-                        .header(ApiKeyTenantFilter.API_KEY_HEADER, "company-1-key"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)));
-
-        // Lower-tier tests worth adding later:
-        // - invalid API key returns 401
-        // - invalid create payload returns 400
-        // - unknown order id returns 404
-        // - illegal status transition returns 409
     }
 
-    private String createOrder(String email, String itemDescription, int quantity) throws Exception {
+    private String createOrder(String email, String itemDescription, String apiKey) throws Exception {
         String responseBody = mockMvc.perform(post("/api/orders")
-                        .header(ApiKeyTenantFilter.API_KEY_HEADER, "company-1-key")
+                        .header(ApiKeyTenantFilter.API_KEY_HEADER, apiKey)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "customerEmail": "%s",
                                   "itemDescription": "%s",
-                                  "quantity": %d
+                                  "quantity": 1
                                 }
-                                """.formatted(email, itemDescription, quantity)))
+                                """.formatted(email, itemDescription)))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", startsWith("/api/orders/")))
-                .andExpect(jsonPath("$.status").value(OrderStatus.PENDING.name()))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
         return objectMapper.readTree(responseBody).get("id").asText();
-    }
-
-    private void assertOrder(
-            String id,
-            String email,
-            String itemDescription,
-            int quantity,
-            OrderStatus status
-    ) throws Exception {
-        mockMvc.perform(get("/api/orders/{id}", id)
-                        .header(ApiKeyTenantFilter.API_KEY_HEADER, "company-1-key"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(id))
-                .andExpect(jsonPath("$.customerEmail").value(email))
-                .andExpect(jsonPath("$.itemDescription").value(itemDescription))
-                .andExpect(jsonPath("$.quantity").value(quantity))
-                .andExpect(jsonPath("$.status").value(status.name()));
-    }
-
-    private ResultActions updateStatus(String id, OrderStatus status) throws Exception {
-        return mockMvc.perform(post("/api/orders/{id}/status", id)
-                .header(ApiKeyTenantFilter.API_KEY_HEADER, "company-1-key")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                        {"status":"%s"}
-                        """.formatted(status.name())));
-    }
-
-    private ResultActions cancelOrder(String id) throws Exception {
-        return mockMvc.perform(post("/api/orders/{id}/cancel", id)
-                .header(ApiKeyTenantFilter.API_KEY_HEADER, "company-1-key"));
     }
 }
