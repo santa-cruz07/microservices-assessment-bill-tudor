@@ -1,0 +1,17 @@
+@host=http://localhost:8080
+@apiKey=company-2-key
+
+### Create Order
+POST {{host}}/api/orders
+Content-Type: application/json
+X-Api-Key: {{apiKey}}
+
+{
+  "customerEmail": "bill@example.com",
+  "itemDescription": "Keyboard",
+  "quantity": 2
+}
+
+### Get Orders
+GET {{host}}/api/orders
+X-Api-Key: {{apiKey}}
