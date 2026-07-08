@@ -36,8 +36,8 @@ jobs:
       - name: Extract tag name
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
 
-      - name: Compile Module
-        run: mvn -B -pl ${{ matrix.module }} -am compile -DskipTests
+      - name: Install Module Dependencies
+        run: mvn -B -pl ${{ matrix.module }} -am install -DskipTests
 
       - name: Build and Push Docker Image
         run: >
