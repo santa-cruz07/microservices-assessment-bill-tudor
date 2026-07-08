@@ -13,6 +13,8 @@ import java.util.UUID;
 @Component
 public class TenantResolver implements CurrentTenantIdentifierResolver<UUID>, HibernatePropertiesCustomizer {
 
+    static final UUID BOOTSTRAP_TENANT_ID = new UUID(0, 0);
+
     @Override
     public UUID resolveCurrentTenantIdentifier() {
         Authentication authentication =
@@ -20,7 +22,7 @@ public class TenantResolver implements CurrentTenantIdentifierResolver<UUID>, Hi
 
         if (authentication == null ||
                 !(authentication.getPrincipal() instanceof TenantPrincipal principal)) {
-            throw new IllegalStateException("No tenant principal found");
+            return BOOTSTRAP_TENANT_ID;
         }
 
         return principal.tenantId();

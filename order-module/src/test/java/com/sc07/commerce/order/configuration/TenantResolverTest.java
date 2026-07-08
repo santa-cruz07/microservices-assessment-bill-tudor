@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TenantResolverTest {
 
@@ -31,10 +30,9 @@ class TenantResolverTest {
     }
 
     @Test
-    void failsWhenTenantPrincipalIsMissing() {
-        assertThatThrownBy(tenantResolver::resolveCurrentTenantIdentifier)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("No tenant principal found");
+    void usesBootstrapTenantWhenSecurityContextIsMissing() {
+        assertThat(tenantResolver.resolveCurrentTenantIdentifier())
+                .isEqualTo(TenantResolver.BOOTSTRAP_TENANT_ID);
     }
 
     @Test

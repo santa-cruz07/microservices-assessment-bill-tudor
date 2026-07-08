@@ -17,6 +17,7 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -69,8 +70,7 @@ class OutboxServiceTest {
         );
         Span span = mock(Span.class);
         Tracer.SpanInScope scope = mock(Tracer.SpanInScope.class);
-        when(outboxEventRepository.findTop50ByPublishedAtIsNullOrderByCreatedAtAsc())
-                .thenReturn(List.of(row));
+        when(outboxEventRepository.findPending(PageRequest.of(0, 50))).thenReturn(List.of(row));
         when(traceService.startSpan("Publish ORDER_CREATED")).thenReturn(span);
         when(tracer.withSpan(span)).thenReturn(scope);
 

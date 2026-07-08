@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sc07.commerce.shared.v1.OrderEvents;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -25,7 +26,9 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Binding orderEventsBinding(Queue orderEventsQueue, TopicExchange ordersExchange) {
+    public Binding orderEventsBinding(
+            @Qualifier("orderEventsQueue") Queue orderEventsQueue,
+            @Qualifier("ordersExchange") TopicExchange ordersExchange) {
         return BindingBuilder.bind(orderEventsQueue).to(ordersExchange).with("order.#");
     }
 
@@ -40,12 +43,14 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Binding deadLetterBinding(Queue deadLetterQueue, FanoutExchange deadLetterExchange) {
+    public Binding deadLetterBinding(
+            @Qualifier("deadLetterQueue") Queue deadLetterQueue,
+            @Qualifier("deadLetterExchange") FanoutExchange deadLetterExchange) {
         return BindingBuilder.bind(deadLetterQueue).to(deadLetterExchange);
     }
 
     @Bean
     public Jackson2JsonMessageConverter messageConverter(ObjectMapper objectMapper) {
-        return new Jackson2JsonMessageConverter(objectMapper, "com.loadup");
+        return new Jackson2JsonMessageConverter(objectMapper, "com.sc07.commerce.shared.v1");
     }
 }

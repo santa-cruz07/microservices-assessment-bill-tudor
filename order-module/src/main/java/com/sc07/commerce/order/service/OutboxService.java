@@ -10,6 +10,7 @@ import io.micrometer.tracing.Tracer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +47,7 @@ public class OutboxService {
     public void publishPending() {
 
         List<OutboxEvent> events =
-                outboxEventRepository.findTop50ByPublishedAtIsNullOrderByCreatedAtAsc();
+                outboxEventRepository.findPending(PageRequest.of(0, 50));
 
         for (OutboxEvent row : events) {
             boolean published = publishEvent(row);

@@ -39,6 +39,12 @@ mvn -pl order-module spring-boot:run
 mvn -pl notification-module spring-boot:run
 ```
 
+Run published images:
+
+```powershell
+docker compose -f docker-compose.images.yaml up -d
+```
+
 Service URLs:
 
 - Order API: `http://localhost:8080`
@@ -46,7 +52,7 @@ Service URLs:
 - RabbitMQ UI: `http://localhost:15672`
 - Aspire: `http://localhost:18888`
 
-API examples are in `resources/api/*.http`.
+Manual request examples for orders, notifications, and actuator endpoints are in `resources/api/*.http`.
 
 ## Tests And Formatting
 
