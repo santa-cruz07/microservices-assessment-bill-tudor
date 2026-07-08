@@ -22,7 +22,7 @@ public class Notification {
 
     @TenantId
     @Column(name = "tenant_id", nullable = false)
-    private String tenantId;
+    private UUID tenantId;
 
     @Column(name = "event_id", nullable = false, unique = true)
     private UUID eventId;
