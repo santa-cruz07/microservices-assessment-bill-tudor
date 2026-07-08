@@ -1,7 +1,7 @@
 @orderHost=http://localhost:8080
 @tenantOneKey=company-1-key
 @tenantTwoKey=company-2-key
-@orderId=replace-with-order-id
+@orderId=b0b52b16-f597-4c15-a5d7-272a1ae35321
 
 ### Create order for tenant 1
 POST {{orderHost}}/api/orders
